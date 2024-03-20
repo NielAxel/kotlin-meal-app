@@ -40,6 +40,7 @@ class CategoryAdapter : RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>
 
     inner class CategoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val binding = ItemCategoryBinding.bind(view)
+        private var isClickable = true
 
         fun bind(data: CategoryItem) {
             with(binding) {

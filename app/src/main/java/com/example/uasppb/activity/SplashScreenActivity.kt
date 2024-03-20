@@ -14,10 +14,7 @@ class SplashScreenActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash_screen)
-
-        // Membuat handler untuk menunda navigasi ke MainActivity
         Handler().postDelayed({
-            // Navigasi ke MainActivity
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish() // Menutup SplashScreenActivity agar tidak bisa kembali ke splash screen dengan tombol back

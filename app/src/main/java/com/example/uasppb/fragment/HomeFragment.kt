@@ -1,29 +1,23 @@
 package com.example.uasppb.fragment
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.os.bundleOf
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.NavController
-import androidx.navigation.Navigation
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.uasppb.R
 import com.example.uasppb.adapter.CategoryAdapter
 import com.example.uasppb.adapter.MealAdapter
 import com.example.uasppb.base.BaseResponse
 import com.example.uasppb.databinding.FragmentHomeBinding
 import com.example.uasppb.model.CategoryItem
 import com.example.uasppb.model.CategoryResponse
-import com.example.uasppb.model.MealsItem
 import com.example.uasppb.model.MealsResponse
 import com.example.uasppb.viewmodel.CategoryViewModel
+import com.example.uasppb.viewmodel.MealDetailViewModel
 import com.example.uasppb.viewmodel.MealViewModel
 
 class HomeFragment : Fragment() {
@@ -32,6 +26,7 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
     private val catViewModel: CategoryViewModel by viewModels()
     private val mealViewModel: MealViewModel by viewModels()
+    private val mealDetailModel: MealDetailViewModel by viewModels()
 
     private var selectedCategory: CategoryItem? = null
 
@@ -56,6 +51,46 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun setupSearchBar() {
+        binding.searchBar.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(strName: String?): Boolean {
+                // Dismiss keyboard when search submitted
+                binding.searchBar.clearFocus()
+                return true
+            }
+
+            override fun onQueryTextChange(strName: String?): Boolean {
+                // Trigger search when text changes
+                strName?.let { searchMeal(it) }
+                return true
+            }
+        })
+    }
+
+    private fun searchMeal(strName: String) {
+        mealDetailModel.getMealDetailByName(strName)
+        mealDetailModel.mealDetailResult.observe(viewLifecycleOwner) { response ->
+            when (response) {
+                is BaseResponse.Loading -> {
+                    // Show loading indicator
+                }
+                is BaseResponse.Success -> {
+                    // Update RecyclerView with search results
+                    val meals = response.data?.data!![0].let {
+//                        mealListAdapter.setData(it)
+                    }
+                }
+                is BaseResponse.Error -> {
+                    errorProcess("Terjadi kesalahan")
+                }
+
+                else -> {
+                    return@observe
+                }
+            }
+        }
+    }
+
     private fun changeCatName() {
         with(binding) {
             if (selectedCategory != null) {
@@ -72,14 +107,16 @@ class HomeFragment : Fragment() {
         catViewModel.categoryResult.observe(viewLifecycleOwner) {
             when (it) {
                 is BaseResponse.Loading -> {
-                    // Tambahkan logika untuk menampilkan indikator loading jika diperlukan
+                    showLoading(true)
                 }
 
                 is BaseResponse.Success -> {
+                    showLoading(false)
                     catSuccessProcess(it.data)
                 }
 
                 is BaseResponse.Error -> {
+                    showLoading(false)
                     errorProcess("Terjadi Kesalahan")
                 }
 
@@ -87,6 +124,14 @@ class HomeFragment : Fragment() {
                     return@observe
                 }
             }
+        }
+    }
+
+    private fun showLoading(isLoading: Boolean) {
+        if (isLoading) {
+            binding.pbProcess.visibility = View.VISIBLE
+        } else {
+            binding.pbProcess.visibility = View.GONE
         }
     }
 
@@ -128,14 +173,16 @@ class HomeFragment : Fragment() {
         mealViewModel.mealResult.observe(viewLifecycleOwner) {
             when (it) {
                 is BaseResponse.Loading -> {
-                    // Tambahkan logika untuk menampilkan indikator loading jika diperlukan
+                    showLoading(true)
                 }
 
                 is BaseResponse.Success -> {
+                    showLoading(false)
                     mealSuccessProcess(it.data)
                 }
 
                 is BaseResponse.Error -> {
+                    showLoading(false)
                     errorProcess("Terjadi Kesalahan")
                 }
 
@@ -156,7 +203,8 @@ class HomeFragment : Fragment() {
 
     private fun setupMealRV() {
         val mealAdapter = MealAdapter()
-        binding.rvMeal.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.rvMeal.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.rvMeal.adapter = mealAdapter
     }
 
@@ -165,15 +213,10 @@ class HomeFragment : Fragment() {
     }
 
     private fun refresh() {
-
+        selectedCategory = null
         getDataCat()
-        observeCategoryData()
-        setupCategoryRV()
-
-        binding.swipeRefresh.setOnRefreshListener {
-            refresh()
-        }
-
+        binding.rvMeal.adapter = null
+        binding.tvCategoryTitle.text = "Select Your Category"
         binding.swipeRefresh.isRefreshing = false
     }
 

@@ -1,6 +1,7 @@
 package com.example.uasppb.adapter
 
 import android.annotation.SuppressLint
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,10 +23,6 @@ class MealAdapter : RecyclerView.Adapter<MealAdapter.MealViewHolder>() {
         notifyDataSetChanged()
     }
 
-    fun setItemClickListener(listener: (MealsItem) -> Unit) {
-        itemClickListener = listener
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MealViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_meal, parent, false)
         return MealViewHolder(view)
@@ -45,11 +42,14 @@ class MealAdapter : RecyclerView.Adapter<MealAdapter.MealViewHolder>() {
             with(binding) {
                 tvMealName.text = data.strMeal
                 Picasso.get().load(data.strMealThumb).into(ivMeal)
+                val bundle = Bundle().apply {
+                    putString("mealId", data.idMeal)
+                }
 
                 itemView.setOnClickListener {
                     itemClickListener?.invoke(data)
                     val navController = itemView.findNavController()
-                    navController.navigate(R.id.action_homeFragment_to_mealDetailFragment)
+                    navController.navigate(R.id.action_homeFragment_to_mealDetailFragment, bundle)
                 }
             }
         }
